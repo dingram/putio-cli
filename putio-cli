@@ -66,9 +66,13 @@ def update_cached_tree(api, force=False):
   add_subitems('', None, subitems)
 
 
+def strip_slashes(path):
+  return '/'.join([segment for segment in path.split('/') if segment != ''])
+
+
 def resolve_path_walk(api, path, parent):
   # strip leading and trailing slashes
-  path = '/'.join([segment for segment in path.split('/') if segment != ''])
+  path = strip_slashes(path)
   # break into head/tail
   (this_segment, ignore, rest) = path.partition('/')
   if this_segment == '':
