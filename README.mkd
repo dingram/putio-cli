@@ -11,6 +11,22 @@ This is a put.io client for the command line, written in Python.
  - Create directories
  - Add transfers from URL(s)
 
+## Installation
+
+Set up the file ~/.config/putio-cli/config, with the following contents:
+
+    [api]
+    key=YOUR_API_KEY
+    secret=YOUR_API_SECRET
+
+    [download]
+    user=YOUR_PUTIO_USERNAME
+    password=YOUR_PUTIO_PASSWORD
+
+The `[download]` section is optional, and is used only to retrieve files. If
+you do not download files using `putio-cli`, then you don't need to fill this
+section in.
+
 ## Author
 
 Dave Ingram <dave@dmi.me.uk>
