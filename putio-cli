@@ -203,10 +203,13 @@ def ls(api, args):
 
   if item is None or item.is_dir:
     subitems = get_all_children(api, item)
-    subitems.sort(lambda x,y: (-1 if x.is_dir else 1) if x.is_dir != y.is_dir else cmp(x.name, y.name))
-    maxlen = reduce(lambda x,y: max(x,y), map(lambda x: 0 if x.is_dir else len(x.size), subitems))
-    for i in subitems:
-      print ls_format(i, maxlen)
+    if len(subitems):
+      subitems.sort(lambda x,y: (-1 if x.is_dir else 1) if x.is_dir != y.is_dir else cmp(x.name, y.name))
+      maxlen = reduce(lambda x,y: max(x,y), map(lambda x: 0 if x.is_dir else len(x.size), subitems))
+      for i in subitems:
+        print ls_format(i, maxlen)
+    else:
+      print "[No items]"
   else:
     print ls_format(item)
 
