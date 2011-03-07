@@ -243,7 +243,7 @@ def add(api, args):
 
 def geturl(api, args):
   """Return the download URL for the given path"""
-  if (len(args) == 0):
+  if (len(args) != 1):
     print "Expected one argument: path to retrieve URL for"
     return
 
@@ -261,20 +261,21 @@ def get(api, args):
     return
 
   if (len(args) == 0):
-    print "Expected one argument: path to retrieve"
+    print "Expected arguments: path(s) to retrieve"
     return
 
-  item = resolve_path(api, args[0])
-  if item.is_dir:
-    print "Directories cannot be fetched (yet)"
-    return
+  for path in args:
+    item = resolve_path(api, path)
+    if item.is_dir:
+      print "Directories cannot be fetched (yet)"
+      return
 
-  target = os.path.join(os.getcwd(), item.name)
-  url = item.get_download_url()
-  print "Downloading %s from %s" % (item.name, url)
+    target = os.path.join(os.getcwd(), item.name)
+    url = item.get_download_url()
+    print "Downloading %s from %s" % (item.name, url)
 
-  fetch_via_curl(url, target, item.name)
-  #fetch_via_urllib(url, target, item.name)
+    fetch_via_curl(url, target, item.name)
+    #fetch_via_urllib(url, target, item.name)
 
 
 def dispatch_command(api, cmd, args=[]):
