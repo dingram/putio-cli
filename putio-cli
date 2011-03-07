@@ -216,7 +216,20 @@ def ls(api, args):
 
 def rm(api, args):
   """Remove a file/folder"""
-  pass
+
+  if (len(args) == 0):
+    item = None
+  elif (len(args) == 1):
+    item = resolve_path(api, args[0])
+  else:
+    print "Expected: at most one argument"
+    return
+
+  if item is None:
+    print "Cannot delete the root element"
+    return
+
+  item.delete_item()
 
 
 def mv(api, args):
@@ -330,6 +343,8 @@ def dispatch_command(api, cmd, args=[]):
     geturl(api, args)
   elif (cmd == 'mkdir'):
     mkdir(api, args)
+  elif (cmd == 'rm'):
+    rm(api, args)
   else:
     print "Unrecognised command: %s" % cmd
 
