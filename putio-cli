@@ -185,7 +185,14 @@ def ls(api, args):
     else:
       return ("-rwxrwxrwx  %"+maxlen+"s %s") % (item.size, item.name)
 
-  item = resolve_path(api, args[0])
+  if (len(args) == 0):
+    item = None
+  elif (len(args) == 1):
+    item = resolve_path(api, args[0])
+  else:
+    print "Expected: at most one argument"
+    return
+
   if item is None or item.is_dir:
     subitems = get_all_children(api, item)
     subitems.sort(lambda x,y: (-1 if x.is_dir else 1) if x.is_dir != y.is_dir else cmp(x.name, y.name))
@@ -253,7 +260,7 @@ def geturl(api, args):
     return
 
   item = resolve_path(api, args[0])
-  if item.is_dir:
+  if item is None or item.is_dir:
     print "Directories have no URL"
   else:
     print item.get_download_url()
@@ -271,7 +278,7 @@ def get(api, args):
 
   for path in args:
     item = resolve_path(api, path)
-    if item.is_dir:
+    if item is None or item.is_dir:
       print "Directories cannot be fetched (yet)"
       return
 
