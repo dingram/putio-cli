@@ -160,7 +160,10 @@ def fetch_via_curl(url, target, item_name):
       print "Aborted download"
       sys.exit(1)
     else:
-      print "Download error %d: %s" % e
+      try:
+        print "Download error %d: %s" % e
+      except TypeError:
+        print "Download error: %s" % e
 
 #-------------------
 # fetch_via_urllib
