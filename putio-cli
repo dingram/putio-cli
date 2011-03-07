@@ -354,6 +354,37 @@ def geturl(api, args):
   else:
     print item.get_download_url()
 
+#----------------
+# get_recursive
+#----------------
+
+def get_recursive(api, root):
+  """Download all files from the "root" directory."""
+  if (len(dl_creds) == 0):
+    print "Please make sure your download credentials are set in %s" % os.path.expanduser('~/.config/putio-cli/config')
+    return
+
+  target = os.path.join(os.getcwd(), root.name) if root is not None else os.getcwd()
+
+  if root is None or root.is_dir:
+    if root is not None:
+      try:
+        os.makedirs(target)
+      except OSError:
+        pass
+      os.chdir(target)
+
+    subitems = get_all_children(api, root)
+    for item in subitems:
+      get_recursive(api, item)
+    os.chdir(os.path.dirname(target))
+
+  else:
+    url = root.get_download_url()
+    print "Downloading %s into %s" % (root.name, os.getcwd())
+
+    fetch(url, target, root.name)
+
 #------
 # get
 #------
@@ -371,7 +402,7 @@ def get(api, args):
   for path in args:
     item = resolve_path(api, path)
     if item is None or item.is_dir:
-      print "Directories cannot be fetched (yet)"
+      get_recursive(api, item)
       return
 
     target = os.path.join(os.getcwd(), item.name)
