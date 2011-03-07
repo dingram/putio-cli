@@ -1,0 +1,16 @@
+# put.io client
+
+This is a put.io client for the command line, written in Python.
+
+## Features
+
+ - Browse your put.io file system
+ - Recursively download a directory and its contents, reproducing the structure locally
+ - Delete files/folders
+ - List transfers
+ - Create directories
+ - Add transfers from URL(s)
+
+## Author
+
+Dave Ingram <dave@dmi.me.uk>
