@@ -159,6 +159,11 @@ def fetch_via_urllib(url, target, item_name):
   urllib.urlretrieve(url, target, progressHook)
 
 
+def fetch(url, target, item_name):
+  return fetch_via_curl(url, target, item_name)
+  #return fetch_via_urllib(url, target, item_name)
+
+
 ############
 # Commands
 ############
@@ -274,8 +279,7 @@ def get(api, args):
     url = item.get_download_url()
     print "Downloading %s from %s" % (item.name, url)
 
-    fetch_via_curl(url, target, item.name)
-    #fetch_via_urllib(url, target, item.name)
+    fetch(url, target, item.name)
 
 
 def dispatch_command(api, cmd, args=[]):
