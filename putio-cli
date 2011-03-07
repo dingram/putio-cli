@@ -2,7 +2,99 @@
 import sys, os, ConfigParser;
 import putio;
 
-def info(api):
+
+#####################
+# Utility functions
+#####################
+
+lst_folder2id = dict();
+lst_id2folder = dict();
+
+def get_all_children(api, parent):
+  if (parent is None):
+    parent_id = 0
+  else:
+    parent_id = parent.id
+
+  fetch_at_once = 50
+  subitems = []
+  offset = 0
+  try:
+    items = api.get_items(parent_id=parent_id, limit=fetch_at_once, offset=0)
+    subitems.extend(items)
+    while len(items) == fetch_at_once:
+      try:
+        items = api.get_items(parent_id=parent_id, limit=fetch_at_once, offset=offset)
+        offset = offset + fetch_at_once
+        subitems.extend(items)
+      except putio.PutioError:
+        pass
+  except putio.PutioError:
+    pass
+
+  return subitems
+
+def update_cached_tree(api, force=False):
+  if len(lst_id2folder) and not force:
+    return
+
+  def add_subitems(path, parent, subitems):
+    if (parent is None):
+      path='/'
+      parent_id=0
+    else:
+      path=path+parent.name+'/'
+      parent_id=parent.id
+
+    added = 0
+    for f in subitems:
+      added = added + 1
+      name = path+f.name
+      #try:
+      #  print name
+      #except:
+      #  print path+'[Unprintable]'
+      lst_folder2id[name] = f.id
+      lst_id2folder[f.id] = f
+      subitems = get_all_children(api, f)
+      added = added + add_subitems(path, f, subitems)
+
+    return added
+
+  subitems = get_all_children(api, f)
+  add_subitems('', None, subitems)
+
+
+def resolve_path_walk(api, path, parent):
+  # strip leading and trailing slashes
+  path = '/'.join([segment for segment in path.split('/') if segment != ''])
+  # break into head/tail
+  (this_segment, ignore, rest) = path.partition('/')
+  if this_segment == '':
+    return parent
+  subitems = get_all_children(api, parent)
+  for subitem in subitems:
+    if subitem.name == this_segment:
+      return resolve_path_walk(api, rest, subitem)
+
+  raise NameError('Path element not found: "%s"' % this_segment)
+
+
+
+def resolve_path(api, path, preprocess = False):
+  """Resolve a path to a file/directory object, or throw a NameError if not found. Returns None for the root directory."""
+  if (preprocess):
+    update_cached_tree(api)
+  if len(lst_id2folder):
+    return lst_id2folder[lst_folder2id[path]]
+  return resolve_path_walk(api, path, None)
+
+############
+# Commands
+############
+
+def info(api, args=[]):
+  """Display user information about available bandwidth and disk space"""
   me = api.get_user_info()
 
   print "Available bandwidth : %s/%s" % (putio.human_size(me.bw_quota_available), putio.human_size(me.bw_quota))
@@ -10,22 +102,42 @@ def info(api):
 
 
 def ls(api, args):
-  pass
+  """List directory contents"""
+  def ls_format(item, maxlen=0):
+    maxlen = (str(maxlen) if maxlen != 0 else '')
+    if item.is_dir:
+      return ("drwxrwxrwx  %"+maxlen+"s %s/") % ('', item.name)
+    else:
+      return ("-rwxrwxrwx  %"+maxlen+"s %s") % (item.size, item.name)
+
+  item = resolve_path(api, args[0])
+  if item is None or item.is_dir:
+    subitems = get_all_children(api, item)
+    subitems.sort(lambda x,y: (-1 if x.is_dir else 1) if x.is_dir != y.is_dir else cmp(x.name, y.name))
+    maxlen = reduce(lambda x,y: max(x,y), map(lambda x: 0 if x.is_dir else len(x.size), subitems))
+    for i in subitems:
+      print ls_format(i, maxlen)
+  else:
+    print ls_format(item)
 
 
 def rm(api, args):
+  """Remove a file/folder"""
   pass
 
 
 def mv(api, args):
+  """Rename a file/folder"""
   pass
 
 
 def mkdir(api, args):
+  """Create a folder"""
   pass
 
 
 def add(api, args):
+  """Add one or more URLs for download"""
   if (len(args) == 0):
     text = ''.join(sys.stdin.readlines())
   else:
@@ -60,17 +172,39 @@ def add(api, args):
 
 
 def geturl(api, args):
+  """Return the download URL for the given path"""
+  if (len(args) == 0):
+    print "Expected one argument: path to retrieve URL for"
+    return
+
+  item = resolve_path(api, args[0])
+  if item.is_dir:
+    print "Directories have no URL"
+  else:
+    print item.get_download_url()
+
+
+def fetch(api, args):
+  """Download the given file to the current directory, optionally building directory structure."""
   pass
 
 
 def dispatch_command(api, cmd, args=[]):
+  """Run the appropriate function for a given command"""
   if (cmd == 'info'):
-    info(api)
+    info(api, args)
   elif (cmd == 'add'):
     add(api, args)
+  elif (cmd == 'ls'):
+    ls(api, args)
+  elif (cmd == 'geturl'):
+    geturl(api, args)
   else:
-    print "Unrecognised command: %s" + cmd
+    print "Unrecognised command: %s" % cmd
 
+####################
+# Main entry point
+####################
 
 if __name__ == '__main__':
   config = ConfigParser.ConfigParser();
