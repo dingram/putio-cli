@@ -82,7 +82,7 @@ def resolve_path_walk(api, path, parent):
     if subitem.name == this_segment:
       return resolve_path_walk(api, rest, subitem)
 
-  raise NameError('Path element not found: "%s"' % this_segment)
+  raise NameError('Path element "%s" not found in "%s"' % (this_segment, parent.name if parent is not None else '/'))
 
 
 def resolve_path(api, path, preprocess = False):
