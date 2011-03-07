@@ -223,7 +223,23 @@ def mv(api, args):
 
 def mkdir(api, args):
   """Create a folder"""
-  pass
+
+  if (len(args) != 1):
+    print "Expected one argument: directory to create"
+    return
+
+  # strip leading and trailing slashes
+  path = strip_slashes(args[0])
+  (path, ignore, last_seg) = path.rpartition('/')
+
+  item = resolve_path(api, '/'+path)
+
+  if item is None:
+    api.create_folder(name=last_seg)
+  elif item.is_dir:
+    item.create_folder(name=last_seg)
+  else:
+    print "Cannot make a directory under a file!"
 
 
 def add(api, args):
@@ -309,6 +325,8 @@ def dispatch_command(api, cmd, args=[]):
     get(api, args)
   elif (cmd == 'geturl'):
     geturl(api, args)
+  elif (cmd == 'mkdir'):
+    mkdir(api, args)
   else:
     print "Unrecognised command: %s" % cmd
 
