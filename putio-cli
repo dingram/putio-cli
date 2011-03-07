@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import sys, os, ConfigParser
+import sys, os, ConfigParser, time
 import putio
 
 
@@ -9,6 +9,7 @@ import putio
 
 lst_folder2id = dict()
 lst_id2folder = dict()
+dl_creds = {}
 
 def get_all_children(api, parent):
   if (parent is None):
@@ -80,7 +81,6 @@ def resolve_path_walk(api, path, parent):
   raise NameError('Path element not found: "%s"' % this_segment)
 
 
-
 def resolve_path(api, path, preprocess = False):
   """Resolve a path to a file/directory object, or throw a NameError if not found. Returns None for the root directory."""
   if (preprocess):
@@ -88,6 +88,76 @@ def resolve_path(api, path, preprocess = False):
   if len(lst_id2folder):
     return lst_id2folder[lst_folder2id[path]]
   return resolve_path_walk(api, path, None)
+
+
+def fetch_via_curl(url, target, item_name):
+  import pycurl
+
+  c = pycurl.Curl()
+  url = str(url)
+  c.setopt(pycurl.URL, url)
+
+  #file_id = open(target, 'wb')
+  # no resume support in put.io yet :-(
+  if os.path.exists(target):
+    file_id = open(target, 'ab')
+    c.setopt(pycurl.RESUME_FROM, os.path.getsize(target))
+  else:
+    file_id = open(target, 'wb')
+
+  c.setopt(pycurl.USERPWD, dl_creds['user']+':'+dl_creds['password'])
+  c.setopt(pycurl.WRITEDATA, file_id)
+  c.setopt(pycurl.NOPROGRESS, 0)
+  c.setopt(pycurl.FOLLOWLOCATION, 1)
+  c.setopt(pycurl.UNRESTRICTED_AUTH, 1)
+  c.setopt(pycurl.SSL_VERIFYPEER, 0)
+
+  def progressHook(total, existing, upload_t, upload_d):
+    try:
+      frac = float(existing)/float(total)
+    except:
+      frac = 0.0
+
+    sys.stdout.write("\r%s: %d of %d (%.02f%%)" % (
+      item_name,
+      existing,
+      total,
+      frac * 100.0
+      ))
+
+  c.setopt(pycurl.PROGRESSFUNCTION, progressHook)
+  try:
+    c.perform()
+    print
+  except pycurl.error as e:
+    print
+    print "Download error: %s" % e
+
+
+def fetch_via_urllib(url, target, item_name):
+  import urllib
+
+  class AuthedUrlOpener(urllib.FancyUrlOpener):
+    def prompt_user_passwd(host, realm):
+      return (dl_creds['user'], dl_creds['password'])
+  urllib._urlopener = AuthedUrlOpener()
+
+  download_started_at = 0.0
+  def progressHook(block_count, block_size, total_size):
+    global download_started_at
+    if (block_count == 0):
+      download_started_at = time.time()
+
+    sys.stdout.write("\r%s: %d of %d (%.02f%%) at %.02fKiB/s" % (
+      item_name,
+      block_count*block_size,
+      total_size,
+      100*float(float(block_count*block_size) / float(total_size)),
+      float(float(float(block_count*block_size)/1024) / float(time.time()-download_started_at))
+      ))
+
+  urllib.urlretrieve(url, target, progressHook)
+
 
 ############
 # Commands
@@ -184,9 +254,27 @@ def geturl(api, args):
     print item.get_download_url()
 
 
-def fetch(api, args):
-  """Download the given file to the current directory, optionally building directory structure."""
-  pass
+def get(api, args):
+  """Download the given file to the current directory."""
+  if (len(dl_creds) == 0):
+    print "Please make sure your download credentials are set in %s" % os.path.expanduser('~/.config/putio-cli/config')
+    return
+
+  if (len(args) == 0):
+    print "Expected one argument: path to retrieve"
+    return
+
+  item = resolve_path(api, args[0])
+  if item.is_dir:
+    print "Directories cannot be fetched (yet)"
+    return
+
+  target = os.path.join(os.getcwd(), item.name)
+  url = item.get_download_url()
+  print "Downloading %s from %s" % (item.name, url)
+
+  fetch_via_curl(url, target, item.name)
+  #fetch_via_urllib(url, target, item.name)
 
 
 def dispatch_command(api, cmd, args=[]):
@@ -197,6 +285,8 @@ def dispatch_command(api, cmd, args=[]):
     add(api, args)
   elif (cmd == 'ls'):
     ls(api, args)
+  elif (cmd == 'get'):
+    get(api, args)
   elif (cmd == 'geturl'):
     geturl(api, args)
   else:
@@ -217,6 +307,13 @@ if __name__ == '__main__':
   except Exception as e:
     print 'An error occurred while connecting to put.io: %s' % e
     sys.exit(1)
+
+  # try to retrieve download credentials
+  try:
+    dl_creds['user'] = config.get('download', 'user')
+    dl_creds['password'] = config.get('download', 'password')
+  except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    dl_creds = {}
 
   if not api.is_ready():
     print "Please make sure your API credentials are correct in %s" % os.path.expanduser('~/.config/putio-cli/config')
