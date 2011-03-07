@@ -297,7 +297,7 @@ class BaseObj(object):
     # Creates an object with given dictionary.
     def __init__(self, dictionary=None, **args):
         if dictionary:
-            self.__dict__ = dictionary
+            self.__dict__.update(dictionary)
         
         if len(args) > 0:
             for k,v in args.iteritems():
@@ -1223,7 +1223,7 @@ class Folder(Item):
     
     
     def __init__(self, api, dictionary=None, **args):
-        Item.__init__(self, dictionary, **args)
+        Item.__init__(self, api, dictionary, **args)
         self.api = api
 
     def create_folder(self, name="New Folder", **args):
