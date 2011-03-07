@@ -135,7 +135,11 @@ def fetch_via_curl(url, target, item_name):
     print
   except pycurl.error as e:
     print
-    print "Download error: %s" % e
+    if e[0] == 42:
+      print "Aborted download"
+      sys.exit(1)
+    else:
+      print "Download error %d: %s" % e
 
 
 def fetch_via_urllib(url, target, item_name):
@@ -313,31 +317,34 @@ def dispatch_command(api, cmd, args=[]):
 ####################
 
 if __name__ == '__main__':
-  config = ConfigParser.ConfigParser()
-  config.read([os.path.expanduser('~/.config/putio-cli/config')])
   try:
-    api = putio.Api(api_key=config.get('api', 'key'), api_secret=config.get('api', 'secret'))
-  except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    print "Please make sure your API credentials are set in %s" % os.path.expanduser('~/.config/putio-cli/config')
-    sys.exit(1)
-  except Exception as e:
-    print 'An error occurred while connecting to put.io: %s' % e
-    sys.exit(1)
+    config = ConfigParser.ConfigParser()
+    config.read([os.path.expanduser('~/.config/putio-cli/config')])
+    try:
+      api = putio.Api(api_key=config.get('api', 'key'), api_secret=config.get('api', 'secret'))
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+      print "Please make sure your API credentials are set in %s" % os.path.expanduser('~/.config/putio-cli/config')
+      sys.exit(1)
+    except Exception as e:
+      print 'An error occurred while connecting to put.io: %s' % e
+      sys.exit(1)
 
-  # try to retrieve download credentials
-  try:
-    dl_creds['user'] = config.get('download', 'user')
-    dl_creds['password'] = config.get('download', 'password')
-  except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-    dl_creds = {}
+    # try to retrieve download credentials
+    try:
+      dl_creds['user'] = config.get('download', 'user')
+      dl_creds['password'] = config.get('download', 'password')
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+      dl_creds = {}
 
-  if not api.is_ready():
-    print "Please make sure your API credentials are correct in %s" % os.path.expanduser('~/.config/putio-cli/config')
-    sys.exit(1)
+    if not api.is_ready():
+      print "Please make sure your API credentials are correct in %s" % os.path.expanduser('~/.config/putio-cli/config')
+      sys.exit(1)
 
-  if len(sys.argv) > 2:
-    dispatch_command(api, sys.argv[1], sys.argv[2:])
-  elif len(sys.argv) > 1:
-    dispatch_command(api, sys.argv[1])
-  else:
-    info(api)
+    if len(sys.argv) > 2:
+      dispatch_command(api, sys.argv[1], sys.argv[2:])
+    elif len(sys.argv) > 1:
+      dispatch_command(api, sys.argv[1])
+    else:
+      info(api)
+  except KeyboardInterrupt as e:
+    sys.exit(2)
