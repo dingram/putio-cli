@@ -3,13 +3,17 @@ import sys, os, ConfigParser, time
 import putio
 
 
-#####################
+########################################################################
 # Utility functions
-#####################
+########################################################################
 
 lst_folder2id = dict()
 lst_id2folder = dict()
 dl_creds = {}
+
+#-------------------
+# get_all_children
+#-------------------
 
 def get_all_children(api, parent):
   if (parent is None):
@@ -34,6 +38,10 @@ def get_all_children(api, parent):
     pass
 
   return subitems
+
+#---------------------
+# update_cached_tree
+#---------------------
 
 def update_cached_tree(api, force=False):
   if len(lst_id2folder) and not force:
@@ -65,10 +73,16 @@ def update_cached_tree(api, force=False):
   subitems = get_all_children(api, f)
   add_subitems('', None, subitems)
 
+#----------------
+# strip_slashes
+#----------------
 
 def strip_slashes(path):
   return '/'.join([segment for segment in path.split('/') if segment != ''])
 
+#--------------------
+# resolve_path_walk
+#--------------------
 
 def resolve_path_walk(api, path, parent):
   # strip leading and trailing slashes
@@ -84,6 +98,9 @@ def resolve_path_walk(api, path, parent):
 
   raise NameError('Path element "%s" not found in "%s"' % (this_segment, parent.name if parent is not None else '/'))
 
+#---------------
+# resolve_path
+#---------------
 
 def resolve_path(api, path, preprocess = False):
   """Resolve a path to a file/directory object, or throw a NameError if not found. Returns None for the root directory."""
@@ -93,6 +110,9 @@ def resolve_path(api, path, preprocess = False):
     return lst_id2folder[lst_folder2id[path]]
   return resolve_path_walk(api, path, None)
 
+#-----------------
+# fetch_via_curl
+#-----------------
 
 def fetch_via_curl(url, target, item_name):
   import pycurl
@@ -141,6 +161,9 @@ def fetch_via_curl(url, target, item_name):
     else:
       print "Download error %d: %s" % e
 
+#-------------------
+# fetch_via_urllib
+#-------------------
 
 def fetch_via_urllib(url, target, item_name):
   import urllib
@@ -167,14 +190,22 @@ def fetch_via_urllib(url, target, item_name):
   urllib.urlretrieve(url, target, progressHook)
 
 
+#--------
+# fetch
+#--------
+
 def fetch(url, target, item_name):
   return fetch_via_curl(url, target, item_name)
   #return fetch_via_urllib(url, target, item_name)
 
 
-############
+########################################################################
 # Commands
-############
+########################################################################
+
+#-------
+# info
+#-------
 
 def info(api, args=[]):
   """Display user information about available bandwidth and disk space"""
@@ -183,6 +214,9 @@ def info(api, args=[]):
   print "Available bandwidth : %s/%s" % (putio.human_size(me.bw_quota_available), putio.human_size(me.bw_quota))
   print "Available disk space: %s/%s" % (putio.human_size(me.disk_quota_available), putio.human_size(me.disk_quota))
 
+#-----
+# ls
+#-----
 
 def ls(api, args):
   """List directory contents"""
@@ -213,6 +247,9 @@ def ls(api, args):
   else:
     print ls_format(item)
 
+#-----
+# rm
+#-----
 
 def rm(api, args):
   """Remove a file/folder"""
@@ -231,11 +268,17 @@ def rm(api, args):
 
   item.delete_item()
 
+#-----
+# mv
+#-----
 
 def mv(api, args):
   """Rename a file/folder"""
   pass
 
+#--------
+# mkdir
+#--------
 
 def mkdir(api, args):
   """Create a folder"""
@@ -257,6 +300,9 @@ def mkdir(api, args):
   else:
     print "Cannot make a directory under a file!"
 
+#------
+# add
+#------
 
 def add(api, args):
   """Add one or more URLs for download"""
@@ -292,6 +338,9 @@ def add(api, args):
   else:
     print "No URLs found"
 
+#---------
+# geturl
+#---------
 
 def geturl(api, args):
   """Return the download URL for the given path"""
@@ -305,6 +354,9 @@ def geturl(api, args):
   else:
     print item.get_download_url()
 
+#------
+# get
+#------
 
 def get(api, args):
   """Download the given file to the current directory."""
@@ -328,6 +380,9 @@ def get(api, args):
 
     fetch(url, target, item.name)
 
+#-------------------
+# dispatch_command
+#-------------------
 
 def dispatch_command(api, cmd, args=[]):
   """Run the appropriate function for a given command"""
@@ -348,9 +403,9 @@ def dispatch_command(api, cmd, args=[]):
   else:
     print "Unrecognised command: %s" % cmd
 
-####################
+########################################################################
 # Main entry point
-####################
+########################################################################
 
 if __name__ == '__main__':
   try:
