@@ -4,16 +4,17 @@ This is a put.io client for the command line, written in Python.
 
 ## Features
 
- - Browse your put.io file system
+ - Browse your put.io storage
+ - Download individual files
  - Recursively download a directory and its contents, reproducing the structure locally
  - Delete files/folders
- - List transfers
  - Create directories
  - Add transfers from URL(s)
+ - Resumable downloads
 
 ## Installation
 
-Set up the file ~/.config/putio-cli/config, with the following contents:
+Set up the file `~/.config/putio-cli/config`, with the following contents:
 
     [api]
     key=YOUR_API_KEY
@@ -27,6 +28,40 @@ The `[download]` section is optional, and is used only to retrieve files. If
 you do not download files using `putio-cli`, then you don't need to fill this
 section in.
 
+## Commands
+
+The various subcommands are shown below:
+
+ - `putio-cli info` displays information about your account, including available/total disk space and bandwidth
+ - `putio-cli add <url> [<url>...]` will tell put.io to download from one or more URLs (either files or torrents)
+ - `putio-cli add` accepts text containing one or more URLs on standard input, and instructs put.io to download them all
+ - `putio-cli ls <path>` displays an `ls`-style directory listing of the given path
+ - `putio-cli geturl <file>` displays the download URL for the given file
+ - `putio-cli get <file>` downloads the file to the current directory
+ - `putio-cli get <dir>` downloads the entire remote directory and all of its contents to a subfolder of the current directory
+ - `putio-cli mkdir <path>` creates the given directory on put.io
+ - `putio-cli rm <path>` deletes the given remote path **WITHOUT CONFIRMATION**.
+
+## Examples
+
+    # Download a single file to the current directory
+    putio-cli get '/Films/My.Favourite.Film.avi'
+
+    # Download an entire directory, creating "Some Show" and everything below
+    # it inside the current directory
+    putio-cli get '/TV/Some Show'
+    # ... later ...
+    ls './Some Show/'
+    # your files and folders
+
+## Bugs and Limitations
+
+ - No support for moving/renaming files or folders (yet)
+ - Not very user-friendly to set up
+ - When resuming a file download, it doesn't tell you how much has been completed already -- just how much is left
+ - Only supports downloading to the current directory
+ - Fairly poor error handling
+
 ## Author
 
-Dave Ingram <dave@dmi.me.uk>
+Dave Ingram
