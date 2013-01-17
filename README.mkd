@@ -23,10 +23,12 @@ Set up the file `~/.config/putio-cli/config`, with the following contents:
     [download]
     user=YOUR_PUTIO_USERNAME
     password=YOUR_PUTIO_PASSWORD
+    limitrate=0
 
 The `[download]` section is optional, and is used only to retrieve files. If
 you do not download files using `putio-cli`, then you don't need to fill this
-section in.
+section in. 
+You can add limiting bandwith with curl. If 0 it is not limited. The value is in bytes.
 
 ## Commands
 
