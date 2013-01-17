@@ -216,8 +216,11 @@ def fetch(url, target, item_name):
 def info(api, args=[]):
   """Display user information about available bandwidth and disk space"""
   me = api.get_user_info()
-
-  print "Available bandwidth : %s/%s" % (putio.human_size(me.bw_quota_available), putio.human_size(me.bw_quota))
+ 
+  #print me.bw_quota
+  print "Name: %s" % (me.name)
+  print "Friends: %d" % (me.friends_count)
+  print "Your shared items: %d" % (me.shared_items)
   print "Available disk space: %s/%s" % (putio.human_size(me.disk_quota_available), putio.human_size(me.disk_quota))
 
 #-----

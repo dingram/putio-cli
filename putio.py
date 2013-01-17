@@ -341,17 +341,13 @@ class PutioError(Exception):
 class User(BaseObj):
     """
     Sample user:
-    
         u.name                  : 'aft'
-        u.friends_count         : 497 
-        u.bw_avail_last_month   : '0'
-        u.bw_quota              : '161061273600' 
-        u.shared_items          : 3
-        u.bw_quota_available    : '35157040261' 
-        u.disk_quota            : '206115891200' 
-        u.disk_quota_available  : '158153510402' 
         u.shared_space          : 0
-    
+        u.shared_items          : 3
+        u.mp4_rss               : 'http://put.io/rss/mp4/...'
+        u.disk_quota            : '206115891200'
+        u.disk_quota_available  : '158153510402'
+        u.friends_count         : 497
     """
     
     def __init__(self, api, dictionary=None, **args):
@@ -845,14 +841,13 @@ class Api(object):
 
         Returned Attributes:
             
-            info.bw_quota
-            info.disk_quota
-            info.bw_quota_available
-            info.disk_quota_available
             info.name
             info.shared_space
-            info.friends_count
             info.shared_items
+            info.mp4_rss
+            info.disk_quota
+            info.disk_quota_available
+            info.friends_count
         
         """
         
