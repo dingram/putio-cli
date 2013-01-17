@@ -131,6 +131,8 @@ def fetch_via_curl(url, target, item_name):
     file_id = open(target, 'wb')
 
   c.setopt(pycurl.USERPWD, dl_creds['user']+':'+dl_creds['password'])
+  if dl_creds['limitrate']:
+    c.setopt(c.MAX_RECV_SPEED_LARGE, dl_creds['limitrate'])
   c.setopt(pycurl.WRITEDATA, file_id)
   c.setopt(pycurl.NOPROGRESS, 0)
   c.setopt(pycurl.FOLLOWLOCATION, 1)
@@ -458,6 +460,7 @@ if __name__ == '__main__':
     try:
       dl_creds['user'] = config.get('download', 'user')
       dl_creds['password'] = config.get('download', 'password')
+      dl_creds['limitrate'] = config.getint('download','limitrate')
     except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
       dl_creds = {}
 
